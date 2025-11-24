@@ -588,12 +588,12 @@ public class GameFrame extends JFrame implements KeyListener
 
         double speed = Math.max(0.4 + (random.nextFloat()*1.2) - size/40,0.4); //Speed of the bullets.
         double damage = 5.6 + (random.nextFloat()*2) + size*0.9; //Damage of the bullets.
-        long weight = (long)((damage/10) + speed*2 + (size/4)); //Knockback/Weight of the bullets.
+        double weight = (long)((damage/10) + speed*2 + (size/3)); //Knockback/Weight of the bullets.
         System.out.println("Bullet wieght: " + weight);
         System.out.println("Speed of next Bullets: " + speed); 
         //Setup stats and speed.
-        lobj.SetupStats(size,size,speed,(long)(weight),(long)(10 * deltaTime),damage,true);
-        robj.SetupStats(size,size,speed,(long)(weight),(long)(10 * deltaTime),damage,true);
+        lobj.SetupStats(size,size,speed,(weight),(long)(10 * deltaTime),damage,true);
+        robj.SetupStats(size,size,speed,(weight),(long)(10 * deltaTime),damage,true);
         lobj.setPermVelocity(0,-speed);
         robj.setPermVelocity(0,-speed);
         bullets.add(lobj);
