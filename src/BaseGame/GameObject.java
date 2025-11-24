@@ -3,7 +3,7 @@ import javax.swing.JComponent;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 /**
- * Everything which can interact with each other, has a point, is painting apon, is a gameobject. Hold in an array to render multiple at a time.
+ * Everything which can interact with each other, has a point, is painting apon, is a gameobject. Held in a array in AllGameObjects to render multiple at a time.
  */
 public class GameObject extends JComponent{
     /**

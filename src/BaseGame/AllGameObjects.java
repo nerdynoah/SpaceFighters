@@ -10,7 +10,7 @@ import javax.swing.JComponent;
  * 
  * Put this object as the main content pain in order to render all gameobjects at once.<br>
  * 
- * <h2>Make sure you add ALL gameobejects to the gameLayor array inside of this class.</h2>
+ * <h3>Make sure you add ALL gameobejects to the gameLayor array inside of this class.</h3>
  */
 public class AllGameObjects extends JComponent
 {
