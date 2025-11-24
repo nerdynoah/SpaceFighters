@@ -429,11 +429,12 @@ public class GameFrame extends JFrame implements KeyListener
                 {
                     spaceShip.heal(astriods.get(i).getDamage());
                     HitDelay = baseHitDelay * 2 + System.currentTimeMillis(); //Update hit delay
+                    bar.setValue((int)spaceShip.getHealth()); //Update visuals.
                 }
-                else if (astriods.get(i).getName().equals("Booster"))
+                else if (astriods.get(i).getName().equals("Booster")) //If you touch a booster, you will get 70% of its effects.
                 {
                     speedboostTime = (long)astriods.get(i).getDamage() + System.currentTimeMillis();
-                    speedBoost = astriods.get(i).getWeight();
+                    speedBoost = astriods.get(i).getWeight()*0.7;
                     System.out.println("Applied speed boost to player: " + speedBoost + " for :" + (speedboostTime/1000 - System.currentTimeMillis())+"s");
                 }
                 else
@@ -442,8 +443,9 @@ public class GameFrame extends JFrame implements KeyListener
                     spaceShip.push(0, astriods.get(i).getWeight() * box.getIsCollidingDirectionY(astriods.get(i)).getY() * -1, astriods.get(i).getWeightTime() + System.currentTimeMillis()); //Knock
                     System.out.println(spaceShip.getName() + " was hit! HP: " + spaceShip.getHealth());
                     HitDelay = baseHitDelay + System.currentTimeMillis(); //Update hit delay
+                    bar.setValue((int)spaceShip.getHealth()); //Update visuals.
                 }
-                bar.setValue((int)spaceShip.getHealth()); //Update visuals.
+                
             }
             for (int j = 0; j < bullets.size(); j++) 
             {
@@ -453,6 +455,17 @@ public class GameFrame extends JFrame implements KeyListener
                     if (!astriods.get(i).getIsAlive()) //Check if its alive, if not, give points based on size.
                     {
                         points = (points + ((long)astriods.get(i).getScale())*10);
+                        if (astriods.get(i).getName().equals("Star")) //Heal the player with a 10% boost to the amount.
+                        {
+                            spaceShip.heal(astriods.get(i).getDamage()*1.1);
+                            bar.setValue((int)spaceShip.getHealth()); //Update visuals.
+                        }
+                        if(astriods.get(i).getName().equalsIgnoreCase("Booster")) //If you destroy a booster, give full boost.
+                        {
+                            speedboostTime = (long)astriods.get(i).getDamage() + System.currentTimeMillis();
+                            speedBoost = astriods.get(i).getWeight();
+                            System.out.println("Applied speed boost to player: " + speedBoost + " for :" + (speedboostTime/1000 - System.currentTimeMillis())+"s");
+                        }
                     }
                     astriods.get(i).push(0, bullets.get(j).getWeight()*-4 + astriods.get(i).getWeight()); //Give knockback
                     bullets.get(j).SetPosition(-100, -100); //Set the bullets off to the side to be deleted.
