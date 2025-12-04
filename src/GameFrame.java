@@ -128,7 +128,7 @@ public class GameFrame extends JFrame implements KeyListener
      * How many points you gained. Currently: <br></br>
      * <ul>
      *  <li>Each Second Survived</li>
-     *  <li>Killing Astriods</li>
+     *  <li>Destorying Objects</li>
      * </ul>
      */
     private long points = 0;
@@ -261,7 +261,7 @@ public class GameFrame extends JFrame implements KeyListener
      */
     public void animate()
     {
-        Timer t = new Timer(8, (e) -> {
+        Timer t = new Timer(10, (e) -> {
             //Deltatime calculations
             long time = System.currentTimeMillis();
             deltaTime = (time - last_time);
@@ -390,7 +390,7 @@ public class GameFrame extends JFrame implements KeyListener
             double weight = Math.max(((damage/4) + speed/2 + (size/8))/16,0)+0.5;
             obj.SetupStats(size,size,speed,(weight),(long)(16*deltaTime),damage,true);
             obj.pushVelocity(0,speed); //Permanilty push these objects downward.
-            astriods.add(obj);
+            astriods.add(obj); 
             allGameObjects.gameLayor.add(obj); //Add to this array to make it possible to paint.
             System.out.println(weight);
         }
@@ -410,11 +410,11 @@ public class GameFrame extends JFrame implements KeyListener
     public void isColliding()
     {
         BoxCollidor box = spaceShip.getBox();
-        for (int i = 0; i < bullets.size(); i++) //Update bullet location
+        for (int i = 0; i < bullets.size(); i++) //Update bullet location, O(n) with n being a value between 0-6.
         {
             bullets.get(i).update(deltaTime);    
         }
-        for (int i = 0; i < astriods.size(); i++)
+        for (int i = 0; i < astriods.size(); i++) //Update astriod info, O(n) with n being a value from 0-50.
         {
             if (astriods.get(i) == null || !astriods.get(i).getIsAlive()) //If any of the astriods are dead, delete them
             {
@@ -467,7 +467,7 @@ public class GameFrame extends JFrame implements KeyListener
                             System.out.println("Applied speed boost to player: " + speedBoost + " for :" + (speedboostTime/1000 - System.currentTimeMillis())+"s");
                         }
                     }
-                    astriods.get(i).push(0, bullets.get(j).getWeight()*-4 + astriods.get(i).getWeight()); //Give knockback
+                    astriods.get(i).push(0, Math.min(bullets.get(j).getWeight()*-4 + astriods.get(i).getWeight(),0)); //Give knockback
                     bullets.get(j).SetPosition(-100, -100); //Set the bullets off to the side to be deleted.
                 }
             }

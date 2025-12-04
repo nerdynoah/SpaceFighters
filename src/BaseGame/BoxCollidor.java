@@ -1,6 +1,6 @@
 package BaseGame;
 
-public class BoxCollidor
+public class BoxCollidor extends Collidor
 {
     /**
      * RIGHT
