@@ -1,5 +1,6 @@
 package BaseGame;
 
+
 /**
  * The direction a object should move.
  */

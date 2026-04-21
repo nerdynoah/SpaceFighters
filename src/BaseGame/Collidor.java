@@ -1,6 +1,5 @@
 package BaseGame;
-
-public abstract class Collidor implements Icollision
+public abstract class Collidor implements ICollision
 {
     /**
      * The center x posisition of the object
@@ -25,5 +24,30 @@ public abstract class Collidor implements Icollision
     public double getCenterY()
     {
         return centerY;
+    }
+    /**
+     * Get is colliding based on exact positions
+     * @param x
+     * @param y
+     * @return
+     */
+    public boolean getIsColliding(double x, double y)
+    {
+        if (centerX == x && centerY == y)
+        {
+            return true;
+        }
+        return false;
+    }
+    /**
+     * Get is colliding based on exact posisiotning
+     */
+    public boolean getIsColliding(GameObject other)
+    {
+        if (other.getYPos() == centerX && other.getYPos() == centerY)
+        {
+            return true;
+        }
+        return false;
     }
 }

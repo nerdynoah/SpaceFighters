@@ -1,4 +1,5 @@
 package BaseGame;
+
 import javax.swing.JComponent;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -39,7 +40,7 @@ public class GameObject extends JComponent{
      */
     protected double rotatation;
     /**
-     * The color of the object. (Doesn't work)
+     * The color of the object. (Used if image is missing.)
      */
     protected Color color;
     /**
@@ -96,6 +97,10 @@ public class GameObject extends JComponent{
     public GameObject()
     {
 
+    }
+    public double GetKnockX()
+    {
+        return knockX;
     }
     /**
      * Copy Constructor

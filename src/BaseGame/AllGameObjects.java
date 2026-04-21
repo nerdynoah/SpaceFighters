@@ -1,5 +1,6 @@
 package BaseGame;
 
+
 import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ public class AllGameObjects extends JComponent
         screenY = y;
     }
     /**
-     * Paint all objects in the  
+     * Paint all objects in the game.
      */
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -47,8 +48,9 @@ public class AllGameObjects extends JComponent
         {
             GameObject obj = gameLayor.get(i);
             
-            if(destoryOffScreenItems(obj) || !obj.getIsAlive()) //Destroy objects below the screen or if the object is dead.
+            if(destoryOffScreenItems(obj) || !obj.getIsAlive() || (obj.getYPos() > screenY + 100 && obj.getDestroyOffScreen())) //Destroy objects below the screen or if the object is dead.
             {
+                obj.removeAll();
                 obj = null;
                 gameLayor.remove(i);
                 size = size - 1;
@@ -89,7 +91,7 @@ public class AllGameObjects extends JComponent
         // g.drawRect(x, y, diameter, diameter);
     }
     /**
-     * Destroy the screen items if they go offscreen unless {@code GameObject obj.getDestroyOffScreen() == true}
+     * Destroy the screen items if they go offscreen unless {@code GameObject obj.getDestroyOffScreen() == false}
      * @param obj gameobject.
      * @return True if it needs to be destroyed, False if it needs to be kept.
      */

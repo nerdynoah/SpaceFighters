@@ -3,11 +3,14 @@ import javax.swing.JOptionPane;
 public class Driver {
     public static void main(String[] args) throws Exception 
     {
+        PlaySong music = new PlaySong();
+        music.playWAV("Music\\MenuThemeC.wav", false);
         //INSTRUCTIONS TO FOLLOW (for instructor and new players)
         JOptionPane.showMessageDialog(null,"Arrow keys to move, Z to shoot. Survive as long as you can" +
         "\n\nObjects to look out for:\nAstriods: Deal damage based on size.\nStars: Purple stars which fly down, destorying all objects it collides with execpt for the spaceship. Instead, it will heal your spaceship if you collide with it.\nGreen Boosters: Increases the speed of the spaceship if collided with, will shove astriods downwards that it collides with.\nEvil Astriods: Huge Astriods with a giant tank of Health. Ignore stars, and worst of all, deal tons of damage." +
-        "\n\nScoring:\n1s = 10 points\nDestruction of any objects give points based on its size", "Controls", JOptionPane.YES_OPTION);
-        while (true)
+        "\n\nScoring:\n1s = 10 points\nDestruction of any objects give points based on its size\nAt 200 points, a boss will begin", "Controls", JOptionPane.YES_OPTION);
+        music.stop();
+        while (true)    
         {
             GameFrame game = new GameFrame();
             while (!game.getGameOver()) {
