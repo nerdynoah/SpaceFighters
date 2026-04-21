@@ -19,14 +19,6 @@ public class BoxCollidor extends Collidor
      */
     protected double negY;
     /**
-     * The center x posisition of the object
-     */
-    protected double centerX;
-    /**
-     * The center y position of the object
-     */
-    protected double centerY;
-    /**
      * Create a box
      * @param x xPos (Center)
      * @param y yPos (Center)
@@ -46,6 +38,7 @@ public class BoxCollidor extends Collidor
      * @param other Gameobject
      * @return True if colliding, false if not colliding.
      */
+    @Override
     public boolean getIsColliding(GameObject other)
     {
         return getIsColliding(new BoxCollidor(other.x, other.y, other.scale));
@@ -67,6 +60,7 @@ public class BoxCollidor extends Collidor
      * @param y Y value
      * @return If X and Y are overlapping, return true;
      */
+    @Override
     public boolean getIsColliding(int x, int y)
     {
         boolean overlapX = (this.negX <= x) && (this.posX >= x);
@@ -201,22 +195,6 @@ public class BoxCollidor extends Collidor
     public double getPosY()
     {
         return posY;
-    }
-    /**
-     * 
-     * @return the center X of the box.
-     */
-    public double getCenterX()
-    {
-        return centerX;
-    }
-    /**
-     * 
-     * @return the center Y of the box.
-     */
-    public double getCenterY()
-    {
-        return centerY;
     }
     /**
      * Print the bounds of the box. (DEBUG ONLY)

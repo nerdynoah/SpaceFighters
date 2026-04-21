@@ -1,6 +1,11 @@
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import BaseGame.*;
+
+import BaseGame.AllGameObjects;
+import BaseGame.BoxCollidor;
+import BaseGame.Direction;
+import BaseGame.GameObject;
+import BaseGame.EnemyAI;
 
 import java.awt.Color;
 import java.awt.event.KeyEvent;
@@ -22,6 +27,10 @@ public class GameFrame extends JFrame implements KeyListener
      */
     private BufferedImage mainSPace = null;
     /**
+     * Enemy spaceship
+     */
+    private BufferedImage enemySpace = null;
+    /**
      * Astriods
      */
     private BufferedImage obstical = null;
@@ -32,6 +41,7 @@ public class GameFrame extends JFrame implements KeyListener
     private BufferedImage staredIMG = null;
     private BufferedImage evilastriodIMG = null;
     private BufferedImage boost = null;
+    private BufferedImage BounceIMG = null;
     /**
      * Used to calculate deltaTime
      */
@@ -51,7 +61,7 @@ public class GameFrame extends JFrame implements KeyListener
     /**
      * Delay between shots.
      */
-    private final long BULLETSUMMONDELAY = 200;
+    private final long BULLETSUMMONDELAY = 191;
     /**
      * Bullet delays
      */
@@ -84,6 +94,18 @@ public class GameFrame extends JFrame implements KeyListener
      * Gives ANYTHING it passes a boost;
      */
     private GameObject booster;
+    /**
+     * A Bossfight.
+     */
+    private GameObject EvilBoss;
+    /**
+     * Bouncing ball
+     */
+    private GameObject BoucingBall;
+    /**
+     * Pathing system for boss;
+     */
+    private EnemyAI EvilBossAI;
     /**
      * An arraylist of <h1>EVERY RENDERED OBJECT</h1>
      */
@@ -138,7 +160,7 @@ public class GameFrame extends JFrame implements KeyListener
      */
     public long getSpeedRun()
     {
-        return speedRun;
+        return System.currentTimeMillis() - speedRun;
     }
     /**
      * 
@@ -146,7 +168,7 @@ public class GameFrame extends JFrame implements KeyListener
      */
     public long getScore()
     {
-        return (points + speedRun)/100;
+        return Math.max((points + System.currentTimeMillis() - speedRun)/100,0);
     }
     /**
      * Is the game over?
@@ -171,13 +193,24 @@ public class GameFrame extends JFrame implements KeyListener
     /**
      * The starting HP of the ship.
      */
-    private final int SHIPSTARTINGHP = 400;
+    private final int SHIPSTARTINGHP = 440;
+    private final int EVILBOSSHP = 1000;
     private long speedboostTime = 0;
+    private long evilShootDelay = 0;
+    private final long EVILSHOTDELAY = 600;
     private double speedBoost = 1;
+    private int mode = 0;
     /**
      * The red progress bar at the bottom of the stage.
      */
     private JProgressBar bar = new JProgressBar(0, SHIPSTARTINGHP);
+    private JProgressBar evilbar = new JProgressBar(0,EVILBOSSHP);
+
+    /**
+     * Music to play in the background
+     */
+    private PlaySong music = new PlaySong();
+    private PlaySong effects = new PlaySong(); 
     /**
      * Setup the game data.
      * @throws IOException File was prob moved or deleted.
@@ -186,8 +219,10 @@ public class GameFrame extends JFrame implements KeyListener
     {
         //Setup time and screen setup for the allGameObjects object.
         random.setSeed(System.nanoTime());
+        speedRun = System.currentTimeMillis();
         last_time = System.currentTimeMillis();
         allGameObjects.SetScreen(WIDTH, HEIGHT);
+        points = 0;
         //Setup images.
         mainSPace = ImageIO.read(new File("MainCharacter\\SpaceFigherCapSmall.png"));
         obstical = ImageIO.read(new File("LOOKOUT\\Astroid2.png"));
@@ -195,17 +230,26 @@ public class GameFrame extends JFrame implements KeyListener
         staredIMG = ImageIO.read(new File("LOOKOUT\\Star.png"));
         evilastriodIMG = ImageIO.read(new File("LOOKOUT\\Astroid.png"));
         boost = ImageIO.read(new File("LOOKOUT/Time.png"));
+        enemySpace = ImageIO.read(new File("LOOKOUT\\Enemy.png"));
+        BounceIMG = ImageIO.read(new File("LOOKOUT\\Bouse.png"));
         
         //Setup gameobjects.
         spaceShip = new GameObject(WIDTH/2, 600, 25, mainSPace);
         spaceShip.setName("Player Spaceship");
         spaceShip.SetupStats(SHIPSTARTINGHP,SHIPSTARTINGHP,0.44f,10,3,false);
+        EvilBoss = new GameObject(600,-100,100,enemySpace);
+        EvilBoss.setName("EvilSpaceBoss");
+        EvilBoss.SetupStats(EVILBOSSHP,EVILBOSSHP,0.485f,5,300);
+
         astriod = new GameObject(600,-100,100,obstical);
         astriod.setName("Astriod");
         astriod.SetupStats(15, 15, 0.1f, 10, 1000,false);
+        BoucingBall = new GameObject(600,-100,100,BounceIMG);
+        BoucingBall.setName("Bouncy");
+        BoucingBall.SetupStats(15, 15, 0.1f, 10, 1000,false);
         evilAstriod = new GameObject(600,-100,100,evilastriodIMG);
         evilAstriod.setName("Evil Astriod");
-        evilAstriod.SetupStats(15, 15, 0.1f, 10, 1000,false);
+        evilAstriod.SetupStats(15, 15, 0.1f, 20, 1000,false);
         star = new GameObject(600,-100,100,staredIMG);
         star.setName("Star");
         star.SetupStats(1, 1, 0.1f, 10, 1000,false);
@@ -213,8 +257,10 @@ public class GameFrame extends JFrame implements KeyListener
         booster.setName("Booster");
         booster.SetupStats(3, 3, 0.1f, 10, 1000,false);
         //Setup background some more.
-        bar.setForeground(Color.RED);
+        bar.setForeground(Color.GREEN);
         bar.setValue(SHIPSTARTINGHP);
+        evilbar.setForeground(Color.RED);
+        evilbar.setValue(0);
         //Create bullet
         bullet = new GameObject(-100,-100,16,bulletIMG);
         bullet.setName("Bullet");
@@ -222,6 +268,7 @@ public class GameFrame extends JFrame implements KeyListener
         //Setup canvus stuff.
         allGameObjects.gameLayor.add(spaceShip);
         this.root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));
+        this.root.add(evilbar);
         this.root.add(allGameObjects);
         this.root.add(bar);
         this.setContentPane(root);
@@ -236,13 +283,14 @@ public class GameFrame extends JFrame implements KeyListener
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setVisible(true);
         speedRun = System.currentTimeMillis(); //Start speedrun
+        music.playWAV("Music/Casual.wav", true);
     }
     /**
      * End the game. Set the speedrun to the correct time, and set the game to be over.
      */
     public void endGame()
     {
-        speedRun = System.currentTimeMillis() - speedRun;
+        music.stop();
         isGameOver = true;
     }
     /**
@@ -270,34 +318,90 @@ public class GameFrame extends JFrame implements KeyListener
             move(); //Update movement of the spaceship
             spaceShip.update(time,deltaTime); //Update the visual of the spaceship during knockback from collision from astriods.
             //Summon astriod if the proper amount of time has passed.
-            if (time > AstriodDelay)
+            if (mode == 0 || mode == 3)
             {
+                if (time > AstriodDelay)
+                {
                 AstriodDelay = Math.max(time + astriodSummonDelay-(summonAstriod() * 20),25); //Delay on summoning the next astriod
                 //Decrease the delay to make the game more diffucult.
                 if (astriodSummonDelay < 270)
                 {
-                    astriodSummonDelay = Math.max(astriodSummonDelay - 1, 100);
+                    astriodSummonDelay = Math.max(astriodSummonDelay - 2, 110);
                 }
-                else if (astriodSummonDelay < 550)
+                else if (astriodSummonDelay < 400)
                 {
-                    astriodSummonDelay = Math.max(astriodSummonDelay - 2, 140);
+                    astriodSummonDelay = Math.max(astriodSummonDelay - 15, 140);
                 }
-                else if (astriodSummonDelay < 740)
+                else if (astriodSummonDelay < 600)
                 {
-                    astriodSummonDelay = Math.max(astriodSummonDelay - 9, 100);
+                    astriodSummonDelay = Math.max(astriodSummonDelay - 50, 100);
                 }
                 else if (astriodSummonDelay < 1000)
                 {
-                    astriodSummonDelay = Math.max(astriodSummonDelay - 50, 100);
+                    astriodSummonDelay = Math.max(astriodSummonDelay - 120, 100);
                 }
                 else
                 {
                     astriodSummonDelay = Math.max(astriodSummonDelay - 200, 100);
                 }
-                System.out.println("Delay for next spawn: " + (AstriodDelay - time));
+                System.out.println("Delay for next spawn: " + (AstriodDelay - time) + "Points: " + this.getScore());
+                }
+                evilbar.setValue((int)this.getScore() * 5);
+            }
+            else if (mode == 2)
+            {
+                if (time > AstriodDelay)
+                {
+                    AstriodDelay = time + 600 - summonAstriod() * 20;
+                    System.out.println("Delay for next spawn: " + (AstriodDelay - time) + "Points: " + this.getScore());
+                }
+                EvilBossAI.BrainMovement();
+                if (System.currentTimeMillis() > evilShootDelay)
+                {
+                    shootEvilBullet();
+                    evilShootDelay = System.currentTimeMillis() + EVILSHOTDELAY;
+                }
+                EvilBossAI.MoveCloserToObject(spaceShip, 0.112f * deltaTime);
+                for (int i = 0; i < astriods.size(); i++)
+                {
+                    if ((astriods.get(i).getName().equals("Star") || astriods.get(i).getName().equals("Booster")) && astriods.get(i).getYPos() > 0 && astriods.get(i).getYPos() < HEIGHT && astriods.get(i).getXPos() < WIDTH &&astriods.get(i).getXPos() > 0)
+                    {
+                        EvilBossAI.MoveCloserToObject(astriods.get(i), 0.275 * deltaTime);
+                        System.out.println("FOUND STAR");
+                        break;
+                    }
+                    if (astriods.get(i).getName().equals("Evil Astriod"))
+                    {
+                        if (EvilBossAI.IsNearby(astriods.get(i)))
+                        {
+                            if (EvilBoss.getXPos() <= WIDTH / 2)
+                            {
+                                EvilBoss.push(0.67 * deltaTime, 0.05 * deltaTime);
+                            }
+                            if (EvilBoss.getXPos() >= WIDTH / 2)
+                            {
+                                EvilBoss.push(-0.67 * deltaTime, 0.05 * deltaTime);
+                            }
+                        }
+                    }
+                }
+                
+                evilbar.setValue((int)EvilBoss.getHealth());
             }
             isColliding(); //Check if anything is colliding
+            if (this.getScore() > 200 && mode < 1)
+            {
+                mode = 1;
+                SummonBoss();
+            }
             this.allGameObjects.repaint(); //Update the script
+            if (!EvilBoss.getIsAlive() && mode < 3) 
+            {
+                music.stop();
+                music.playWAV("Music\\ToVictory.wav", true);
+                AstriodDelay = 2000;
+                mode = 3;
+            }
             if (getSpaceShipDead()) //If the spaceship is dead, end the game.
             {
                 ((Timer)e.getSource()).stop();
@@ -320,14 +424,18 @@ public class GameFrame extends JFrame implements KeyListener
     {
         double size = 10 + (random.nextFloat()*160); //Size
         float rngValue = random.nextFloat();
-        if (rngValue > 0.955)
+        if (mode == 2)
+        {
+            rngValue = rngValue + 0.082f;
+        }
+        if (rngValue > 0.95)
         {
             GameObject obj = new GameObject(star,false,Math.max(size/2,20));
             obj.SetPosition(random.nextInt(WIDTH), -size); //Random summoning position
             //Setup stats
-            double speed = Math.max(1 + (random.nextFloat()*0.4) - size/200,0.4);
+            double speed = Math.max(0.6 + (random.nextFloat()*0.6) - size/200,0.4);
             double damage = 25 + (random.nextFloat()*10) + size/9;
-            double weight = Math.max(((damage/4) + speed/2 + (size/8))/16,0)+0.5;
+            double weight = Math.max(((damage/4) + speed + (size/8))/16,0)+0.5;
             obj.SetupStats(size/10,size/10,speed,(weight),(long)(16*deltaTime),damage,true);
             if (obj.getXPos() < WIDTH/2)
             {
@@ -342,23 +450,23 @@ public class GameFrame extends JFrame implements KeyListener
             allGameObjects.gameLayor.add(obj); //Add to this array to make it possible to paint.
             System.out.println(weight);
         }
-        else if (rngValue > 0.94879)
+        else if (rngValue > 0.93)
         {
-            size = size * 3;
+            size = size * 2.8;
             GameObject obj = new GameObject(evilAstriod,false,size+20); //Copy
             obj.SetPosition(WIDTH/2, -size); //Random summoning position
             //Setup stats
             double speed = Math.max(Math.abs(0.2 + (random.nextFloat()*(size/100)) - (size-100)/100)/10,0.2);
-            double damage = 40 + (random.nextFloat()*20) + size/3;
-            double weight = Math.max(((damage) + speed + (size))/12,0)+2;
-            double health = 170 + random.nextFloat()*50;
+            double damage = 30 + (random.nextFloat()*20) + size/3;
+            double health = 140 + size/10 + random.nextFloat()*70;
+            double weight = Math.max(((damage) + speed + (size))/12,0)+ health * 0.02;
             obj.SetupStats(health,health,speed,(weight),(long)(16*deltaTime),damage,true);
             obj.pushVelocity(0,speed); //Permanilty push these objects downward.
             astriods.add(obj);
             allGameObjects.gameLayor.add(obj); //Add to this array to make it possible to paint.
             System.out.println(weight);
         }
-        else if (rngValue > 0.913)
+        else if (rngValue > 0.865)
         {
             size = size + 40;
             GameObject obj = new GameObject(booster,false,size);
@@ -388,7 +496,7 @@ public class GameFrame extends JFrame implements KeyListener
             double speed = Math.max(0.82 + (random.nextFloat()*0.35) - size/180,0.4);
             double damage = 10 + (random.nextFloat()*10) + size/9;
             double weight = Math.max(((damage/4) + speed/2 + (size/8))/16,0)+0.5;
-            obj.SetupStats(size,size,speed,(weight),(long)(16*deltaTime),damage,true);
+            obj.SetupStats(size * 0.8f,size * 0.8f,speed,(weight),(long)(16*deltaTime),damage,true);
             obj.pushVelocity(0,speed); //Permanilty push these objects downward.
             astriods.add(obj); 
             allGameObjects.gameLayor.add(obj); //Add to this array to make it possible to paint.
@@ -440,7 +548,7 @@ public class GameFrame extends JFrame implements KeyListener
                 else
                 {
                     spaceShip.damage(astriods.get(i).getDamage()); //Damage
-                    spaceShip.push(0, astriods.get(i).getWeight() * box.getIsCollidingDirectionY(astriods.get(i)).getY() * -1, astriods.get(i).getWeightTime() + System.currentTimeMillis()); //Knock
+                    spaceShip.push(astriods.get(i).getWeight() * astriods.get(i).GetKnockX(), astriods.get(i).getWeight() * astriods.get(i).getKnockY(), astriods.get(i).getWeightTime() + System.currentTimeMillis()); //Knock
                     System.out.println(spaceShip.getName() + " was hit! HP: " + spaceShip.getHealth());
                     HitDelay = baseHitDelay + System.currentTimeMillis(); //Update hit delay
                     bar.setValue((int)spaceShip.getHealth()); //Update visuals.
@@ -479,13 +587,18 @@ public class GameFrame extends JFrame implements KeyListener
                     Direction dir = evilBox.getIsCollidingDirectionX(astriods.get(j));
                     astriods.get(i).pushVelocity(-1*dir.getX() * (0.0006*Math.max(astriods.get(j).getWeight() - astriods.get(i).getWeight(), 0)+ 0.0004)* deltaTime,0); //Knocking them left/right only
                     astriods.get(j).pushVelocity(dir.getX() * (0.0006*Math.max(astriods.get(i).getWeight() - astriods.get(j).getWeight(), 0) + 0.0004)* deltaTime,0); //Knocking them left/right only
-                    if (astriods.get(i).getName().equals("Star") && !astriods.get(j).getName().equals("Evil Astriod"))
-                    {
-                        astriods.get(j).damage(astriods.get(i).getDamage());
-                    }
-                    if (astriods.get(j).getName().equals("Star") && !astriods.get(i).getName().equals("Evil Astriod"))
+                    if (astriods.get(j).getName().equals("Star") && !astriods.get(i).getName().equals("Evil Astriod") && !astriods.get(i).getName().equals("EvilSpaceBoss"))
                     {
                         astriods.get(i).damage(astriods.get(j).getDamage());
+                    }
+                    else if (astriods.get(j).getName().equals("Star") && astriods.get(i).getName().equals("EvilSpaceBoss"))
+                    {
+                        astriods.get(i).heal(astriods.get(j).getDamage()*1.2);
+                        astriods.get(j).damage(10000);
+                    }
+                    else if (astriods.get(j).getName().equals("EvilSpaceBoss") && !astriods.get(i).getName().equals("Booster") && astriods.get(i).getName().equals("Bouncy"))
+                    {
+                        astriods.get(j).damage(astriods.get(j).getDamage()*1.15);
                     }
                     if (astriods.get(i).getName().equals("Booster"))
                     {
@@ -583,11 +696,11 @@ public class GameFrame extends JFrame implements KeyListener
         GameObject lobj = new GameObject(bullet,true,size);
         GameObject robj = new GameObject(bullet, true, size);
         //Left and right of the ship
-        robj.SetPosition(spaceShip.getBox().getPosX(), spaceShip.getYPos());
-        lobj.SetPosition(spaceShip.getBox().getNegX(), spaceShip.getYPos());
+        robj.SetPosition(spaceShip.getBox().getPosX(), spaceShip.getYPos() - size);
+        lobj.SetPosition(spaceShip.getBox().getNegX(), spaceShip.getYPos() - size);
 
-        double speed = Math.max(0.4 + (random.nextFloat()*1.2) - size/40,0.4); //Speed of the bullets.
-        double damage = 5.6 + (random.nextFloat()*2) + size*0.9; //Damage of the bullets.
+        double speed = Math.max(0.5 + (random.nextFloat()*1.3) - size/40,0.4); //Speed of the bullets.
+        double damage = 4.5 + (random.nextFloat()*2.5) + size*0.25; //Damage of the bullets.
         double weight = (long)((damage/10) + speed*2 + (size/3)); //Knockback/Weight of the bullets.
         System.out.println("Bullet wieght: " + weight);
         System.out.println("Speed of next Bullets: " + speed); 
@@ -598,6 +711,31 @@ public class GameFrame extends JFrame implements KeyListener
         robj.setPermVelocity(0,-speed);
         bullets.add(lobj);
         bullets.add(robj);  
+        allGameObjects.gameLayor.add(robj); //Add to drawing array.
+        allGameObjects.gameLayor.add(lobj); //Add to drawing array.
+    }
+    public void shootEvilBullet()
+    {
+        double size = 6 + (random.nextFloat()*40); //Size
+        //2 Bullets
+        GameObject lobj = new GameObject(BoucingBall,true,size);
+        GameObject robj = new GameObject(BoucingBall, true, size);
+        //Left and right of the ship
+        robj.SetPosition(EvilBoss.getBox().getPosX() + size + 1, EvilBoss.getBox().getPosY() + size + 1);
+        lobj.SetPosition(EvilBoss.getBox().getNegX() - size + 1, EvilBoss.getBox().getPosY() + size + 1);
+
+        double speed = Math.max(0.25 + (random.nextFloat()*1.25) - size/40,0.2); //Speed of the bullets.
+        double damage = (random.nextFloat()*(EvilBoss.getDamage()*0.55)) + size*0.25; //Damage of the bullets.
+        double weight = (long)((damage/60) + speed*1.2 + (size/4)); //Knockback/Weight of the bullets.
+        System.out.println("Bullet wieght: " + weight);
+        System.out.println("Speed of next Bullets: " + speed); 
+        //Setup stats and speed.
+        lobj.SetupStats(size/2,size/2,speed,(weight),100,damage,true);
+        robj.SetupStats(size/2,size/2,speed,(weight),100,damage,true);
+        lobj.setPermVelocity(0,speed);
+        robj.setPermVelocity(0,speed);
+        astriods.add(lobj);
+        astriods.add(robj);  
         allGameObjects.gameLayor.add(robj); //Add to drawing array.
         allGameObjects.gameLayor.add(lobj); //Add to drawing array.
     }
@@ -625,7 +763,7 @@ public class GameFrame extends JFrame implements KeyListener
         {
             right = true; //Move Right
         }
-        if ((e.getKeyCode() == Controls.primary || e.getKeyCode() == Controls.secondary) && (getBulletCount() < 4 + extra && System.currentTimeMillis() > bulletDelay))
+        if ((e.getKeyCode() == Controls.primary || e.getKeyCode() == Controls.secondary) && (getBulletCount() < 8 + extra && System.currentTimeMillis() > bulletDelay))
         {
             bulletDelay = BULLETSUMMONDELAY + System.currentTimeMillis(); //Delay before the next shot.
             shootBullet();
@@ -656,6 +794,26 @@ public class GameFrame extends JFrame implements KeyListener
         {
             right = false; //Stop right
         }
+    }
+    /**
+     * Use to summon the boss;
+     */
+    private void SummonBoss()
+    {
+        music.stop();
+        //https://www.youtube.com/watch?v=5o9ftHHIyY4&list=PLBWCE0NqaWBqkSYpgSJwRBkKAcJNoFW16&index=189 <-- CREDIT TO MUSIC
+        music.playWAV("Music\\Mario & Luigi Brothership Drowned In Despair Glohm Boss Battle Theme (by @hi_im_shade445) - MysteryMa'am (128k).wav", true);
+        int SIZE = 30;
+        EvilBoss = new GameObject(EvilBoss,false,SIZE);
+        EvilBoss.SetupStats(EVILBOSSHP, EVILBOSSHP, 3f, 35, 400,20,false);
+        EvilBossAI = new EnemyAI(EvilBoss, 720, WIDTH, HEIGHT);
+        
+        EvilBoss.SetPosition(WIDTH/2, SIZE);
+        astriods.add(EvilBoss);
+        allGameObjects.gameLayor.add(EvilBoss);
+        mode = 2;
+        evilbar.setValue(EVILBOSSHP);
+        EvilBoss.push(30, 0);
     }
     
 }
