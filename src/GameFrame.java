@@ -197,7 +197,7 @@ public class GameFrame extends JFrame implements KeyListener
     private final int EVILBOSSHP = 1000;
     private long speedboostTime = 0;
     private long evilShootDelay = 0;
-    private final long EVILSHOTDELAY = 600;
+    private final long EVILSHOTDELAY = 580;
     private double speedBoost = 1;
     private int mode = 0;
     /**
@@ -210,7 +210,31 @@ public class GameFrame extends JFrame implements KeyListener
      * Music to play in the background
      */
     private PlaySong music = new PlaySong();
+    /**
+     * Good shooting effect
+     * Whoosh effect: Sound Effect by <a href="https://pixabay.com/users/universfield-28281460/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=192899">Universfield</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=192899">Pixabay</a>
+     * Sound Effect by <a href="https://pixabay.com/users/media_man_uk-53122485/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=432285">Media_Man_UK</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=432285">Pixabay</a>
+     */
     private PlaySong effects = new PlaySong(); 
+    /**
+     * Used to play the astriod effects
+     */
+    private PlaySong hitSoundCH2 = new PlaySong();
+    /**
+     * Evil shooter
+     * Sound Effect by <a href="https://pixabay.com/users/u_62htdrvg4y-50821090/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=359196">u_62htdrvg4y</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=359196">Pixabay</a>
+     */
+    private PlaySong evilShotEffect = new PlaySong();
+    /**
+     * Good hitsound
+     * Sound Effect by <a href="https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=14611">freesound_community</a> from <a href="https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=14611">Pixabay</a>
+     */
+    private PlaySong hitSound = new PlaySong();
+    /**
+     * Coin sound: <a href="https://pixabay.com/users/u_vdwj1c20kz-50311970/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=342335">u_vdwj1c20kz</a> from <a href="https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=342335">Pixabay</a>
+     * Hurt sound: <a href="https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=103405">freesound_community</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=103405">Pixabay</a>
+     */
+    private PlaySong hurtSound = new PlaySong();
     /**
      * Setup the game data.
      * @throws IOException File was prob moved or deleted.
@@ -457,9 +481,9 @@ public class GameFrame extends JFrame implements KeyListener
             obj.SetPosition(WIDTH/2, -size); //Random summoning position
             //Setup stats
             double speed = Math.max(Math.abs(0.2 + (random.nextFloat()*(size/100)) - (size-100)/100)/10,0.2);
-            double damage = 30 + (random.nextFloat()*20) + size/3;
+            double damage = 10 + (random.nextFloat()*20) + size/3;
             double health = 140 + size/10 + random.nextFloat()*70;
-            double weight = Math.max(((damage) + speed + (size))/12,0)+ health * 0.02;
+            double weight = Math.max(((damage*2) + speed + (size))/12,0)+ health * 0.02;
             obj.SetupStats(health,health,speed,(weight),(long)(16*deltaTime),damage,true);
             obj.pushVelocity(0,speed); //Permanilty push these objects downward.
             astriods.add(obj);
@@ -535,9 +559,11 @@ public class GameFrame extends JFrame implements KeyListener
             { //If yes, then damage, knockback, and give a hitdelay to the spaceShip.
                 if (astriods.get(i).getName().equals("Star"))
                 {
+                    hurtSound.stop();
                     spaceShip.heal(astriods.get(i).getDamage());
                     HitDelay = baseHitDelay * 2 + System.currentTimeMillis(); //Update hit delay
                     bar.setValue((int)spaceShip.getHealth()); //Update visuals.
+                    hurtSound.playWAV("Music\\Effects\\u_vdwj1c20kz-coin-collision-sound-342335.wav", false);
                 }
                 else if (astriods.get(i).getName().equals("Booster")) //If you touch a booster, you will get 70% of its effects.
                 {
@@ -547,11 +573,13 @@ public class GameFrame extends JFrame implements KeyListener
                 }
                 else
                 {
+                    hurtSound.stop();
                     spaceShip.damage(astriods.get(i).getDamage()); //Damage
                     spaceShip.push(astriods.get(i).getWeight() * astriods.get(i).GetKnockX(), astriods.get(i).getWeight() * astriods.get(i).getKnockY(), astriods.get(i).getWeightTime() + System.currentTimeMillis()); //Knock
                     System.out.println(spaceShip.getName() + " was hit! HP: " + spaceShip.getHealth());
                     HitDelay = baseHitDelay + System.currentTimeMillis(); //Update hit delay
                     bar.setValue((int)spaceShip.getHealth()); //Update visuals.
+                    hurtSound.playWAV("Music\\Effects\\freesound_community-fast-collision-reverb-14611.wav", false);
                 }
                 
             }
@@ -559,17 +587,22 @@ public class GameFrame extends JFrame implements KeyListener
             {
                 if (astriods.get(i).getBox().getIsColliding(bullets.get(j))) //Check if any bullets have collided with the astriods
                 { //If yes, damage and knockback the astriods based on weight.
+                    hitSound.stop();
                     astriods.get(i).damage(bullets.get(j).getDamage()); //Damage the astriod
+                    hitSound.playWAV("Music\\Effects\\freesound_community-fast-collision-reverb-14611.wav", false);
                     if (!astriods.get(i).getIsAlive()) //Check if its alive, if not, give points based on size.
                     {
+                        hitSoundCH2.stop();
                         points = (points + ((long)astriods.get(i).getScale())*10);
                         if (astriods.get(i).getName().equals("Star")) //Heal the player with a 10% boost to the amount.
                         {
+                            hitSoundCH2.playWAV("Music\\Effects\\u_vdwj1c20kz-coin-collision-sound-342335.wav", false);
                             spaceShip.heal(astriods.get(i).getDamage()*1.1);
                             bar.setValue((int)spaceShip.getHealth()); //Update visuals.
                         }
                         if(astriods.get(i).getName().equalsIgnoreCase("Booster")) //If you destroy a booster, give full boost.
                         {
+                            hitSoundCH2.playWAV("Music/Effects/universfield-high-speed-02-192899.wav", false);
                             speedboostTime = (long)astriods.get(i).getDamage() + System.currentTimeMillis();
                             speedBoost = astriods.get(i).getWeight();
                             System.out.println("Applied speed boost to player: " + speedBoost + " for :" + (speedboostTime/1000 - System.currentTimeMillis())+"s");
@@ -691,6 +724,8 @@ public class GameFrame extends JFrame implements KeyListener
      */
     public void shootBullet()
     {
+        effects.stop();
+        effects.playWAV("Music\\Effects\\media_man_uk-lazer-gun-432285.wav", false);
         double size = 6 + (random.nextFloat()*16); //Size
         //2 Bullets
         GameObject lobj = new GameObject(bullet,true,size);
@@ -700,7 +735,7 @@ public class GameFrame extends JFrame implements KeyListener
         lobj.SetPosition(spaceShip.getBox().getNegX(), spaceShip.getYPos() - size);
 
         double speed = Math.max(0.5 + (random.nextFloat()*1.3) - size/40,0.4); //Speed of the bullets.
-        double damage = 4.5 + (random.nextFloat()*2.5) + size*0.25; //Damage of the bullets.
+        double damage = 4.5 + (random.nextFloat()*2) + size*0.25; //Damage of the bullets.
         double weight = (long)((damage/10) + speed*2 + (size/3)); //Knockback/Weight of the bullets.
         System.out.println("Bullet wieght: " + weight);
         System.out.println("Speed of next Bullets: " + speed); 
@@ -709,6 +744,7 @@ public class GameFrame extends JFrame implements KeyListener
         robj.SetupStats(size,size,speed,(weight),(long)(10 * deltaTime),damage,true);
         lobj.setPermVelocity(0,-speed);
         robj.setPermVelocity(0,-speed);
+        
         bullets.add(lobj);
         bullets.add(robj);  
         allGameObjects.gameLayor.add(robj); //Add to drawing array.
@@ -716,6 +752,8 @@ public class GameFrame extends JFrame implements KeyListener
     }
     public void shootEvilBullet()
     {
+        evilShotEffect.stop();
+        evilShotEffect.playWAV("Music\\Effects\\u_62htdrvg4y-gun-shot-359196.wav", false);
         double size = 6 + (random.nextFloat()*40); //Size
         //2 Bullets
         GameObject lobj = new GameObject(BoucingBall,true,size);
