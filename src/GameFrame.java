@@ -385,13 +385,14 @@ public class GameFrame extends JFrame implements KeyListener
                     shootEvilBullet();
                     evilShootDelay = System.currentTimeMillis() + EVILSHOTDELAY;
                 }
-                EvilBossAI.MoveCloserToObject(spaceShip, 0.112f * deltaTime);
+                boolean found = false;
                 for (int i = 0; i < astriods.size(); i++)
                 {
                     if ((astriods.get(i).getName().equals("Star") || astriods.get(i).getName().equals("Booster")) && astriods.get(i).getYPos() > 0 && astriods.get(i).getYPos() < HEIGHT && astriods.get(i).getXPos() < WIDTH &&astriods.get(i).getXPos() > 0)
                     {
-                        EvilBossAI.MoveCloserToObject(astriods.get(i), 0.275 * deltaTime);
+                        EvilBossAI.MoveCloserToObject(astriods.get(i), 0.3 * deltaTime);
                         System.out.println("FOUND STAR");
+                        found = true;
                         break;
                     }
                     if (astriods.get(i).getName().equals("Evil Astriod"))
@@ -408,6 +409,10 @@ public class GameFrame extends JFrame implements KeyListener
                             }
                         }
                     }
+                }
+                if (!found)
+                {
+                    EvilBossAI.MoveCloserToObject(spaceShip, 0.112f * deltaTime);
                 }
                 
                 evilbar.setValue((int)EvilBoss.getHealth());
@@ -626,7 +631,7 @@ public class GameFrame extends JFrame implements KeyListener
                     }
                     else if (astriods.get(j).getName().equals("Star") && astriods.get(i).getName().equals("EvilSpaceBoss"))
                     {
-                        astriods.get(i).heal(astriods.get(j).getDamage()*1.2);
+                        astriods.get(i).heal(astriods.get(j).getDamage()*1.5);
                         astriods.get(j).damage(10000);
                     }
                     else if (astriods.get(j).getName().equals("EvilSpaceBoss") && !astriods.get(i).getName().equals("Booster") && astriods.get(i).getName().equals("Bouncy"))
